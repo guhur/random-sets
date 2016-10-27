@@ -111,7 +111,33 @@ def findMinNvoters(Ncandidates, maxError = 0.1, Ntests = 100, Nwinner = 1, Nsubs
         Nvoters_old = Nvoters
     return Nvoters
 
+def findMinAlpha(Ncandidates, Nvoters, Ntests = 100, Nsubset = 5, q = 1, alphaMin = 1, epsilon1=0.1, epsilon2=0.1):
+    alpha = alphaMin - q
+    alpha_old = alpha
+    error1 = epsilon1 + 1
+    error2 = epsilon2 + 1
 
+    while error1 > epsilon1 and error2 > epsilon2:
+        alpha += q
+        sys.stdout.write("\ralpha = %i is too low (error1 = %.4f and error2 = %.4f). Try with \alpha = %i.\n" % (alpha_old, error1, error2, alpha))
+        err_samples = np.zeros(Ntests, dtype=int)
+        for t in range(Ntests):
+            sys.stdout.write("\rTest: %i/%i (%i %%)" % (t+1, Ntests, float(t)/float(Ntests)*100.0))
+            occurrences = np.zeros(Ncandidates)
+            cv2_samples = np.zeros(Ntests)
+            cv1_samples = np.zeros(Ntests)
+            corr = np.zeros((Ncandidates,Ncandidates))
+            for i in range(Nvoters+1):
+                lot     = subset(Ncandidates, Nsubset, occurrences, alpha)
+                for k in lot:
+                    corr[k,lot] += 1
+            tri = corr[np.triu_indices(Ncandidates, -1)]
+            cv2_samples[t] = scipy.stats.variation(tri)
+            cv1_samples[t] = scipy.stats.variation(occurrences)
+        error1 = np.mean(cv1_samples, axis=0)
+        error2 = np.mean(cv1_samples, axis=0)
+        alpha_old = alpha
+    return alpha 
 
 def computeError(Ncandidates, Nvoters, maxError = 0.1, Nwinner = 1, Nsubset = 5, Ngrades = 5, alpha = 1, real_results = "terranova.txt", epsilon=0.0):
     if epsilon == 0.0:
