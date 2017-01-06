@@ -1,9 +1,4 @@
 import numpy as np
-import matplotlib.pyplot as plt
-from matplotlib import rc
-#rc('font',**{'family':'sans-serif','sans-serif':['Helvetica']})
-rc('font',**{'family':'serif','serif':['Times']})
-rc('text', usetex=True)
 import scipy.stats
 import sys
 
@@ -86,8 +81,8 @@ def findMinNvoters(Ncandidates, maxError = 0.1, Ntests = 100, Nwinners = 10, Nsu
     Nwinners = min(Nwinners, Ncandidates)
     errors = (maxError + 1)*np.ones(Nwinners)
     minNvoters = np.zeros(Nwinners)
-    maxNvoters = 100000    
-    
+    maxNvoters = 100000
+
     # perfect election
     pr_priori = probaCandidates(Ncandidates, Ngrades, real_results)
     res_priori = np.trunc(pr_priori*1000)
@@ -117,7 +112,7 @@ def findMinNvoters(Ncandidates, maxError = 0.1, Ntests = 100, Nwinners = 10, Nsu
         errors = np.mean(err_samples, axis=0)
         minNvoters[(errors < maxError) & (minNvoters == 0)] = Nvoters# if error_test[i] and minNvoters == 0 else 0]
         Nvoters_old = Nvoters
-    return minNvoters 
+    return minNvoters
 
 
 def findMinAlpha(Ncandidates, Nvoters, Ntests = 100, Nsubset = 5, q = 1, alphaMin = 1, epsilon1=0.1, epsilon2=0.1):
@@ -146,7 +141,7 @@ def findMinAlpha(Ncandidates, Nvoters, Ntests = 100, Nsubset = 5, q = 1, alphaMi
         error1 = np.mean(cv1_samples, axis=0)
         error2 = np.mean(cv1_samples, axis=0)
         alpha_old = alpha
-    return alpha 
+    return alpha
 
 def computeError(Ncandidates, Nvoters, maxError = 0.1, Nwinner = 1, Nsubset = 5, Ngrades = 5, alpha = 1, real_results = "terranova.txt", epsilon=0.0):
     if epsilon == 0.0:
