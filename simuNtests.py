@@ -32,12 +32,12 @@ if __name__ == '__main__':
     Nwinners = 1
     args = []
     print Ncandidates
-    for i in range(Ncandidates):
+    for i in range(Ntests):
         arg = [Ncandidates,100,1]
         args.append(arg)
     if args == []:
         print "Rien a faire!"
-    pool       = multiprocessing.Pool(processes=1)
+    pool       = multiprocessing.Pool(processes=20)
     pool.map(worker, args)
 
     print "Alors, ca marche ? :)"
