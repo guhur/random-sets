@@ -28,7 +28,8 @@ if __name__ == '__main__':
         pass
 
     Ncandidates = int(sys.argv[1])
-    Ntests = [sys.argv[1] if len(sys.argv) == 3 else 1000]
+    Ntests = int(sys.argv[2]) if len(sys.argv) == 3 else 1000
+    print Ntests
     Nwinners = 1
     args = []
     print Ncandidates
