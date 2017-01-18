@@ -45,7 +45,7 @@ def majorityJudgment(results):
     return sorted(range(len(results)), cmp=tieBreaking, key=results.__getitem__)
 
 def probaCandidates(Ncandidates, Ngrades, inFile):
-    """Read inFile. If there is not enough candidates, interpolate other. Save in outFile """
+    """Read inFile. If there is not enough candidates, interpolate other."""
     inCandidates = np.genfromtxt(inFile, delimiter = " ", dtype=float)
     inCandidates = inCandidates[:,:Ngrades]
     Nc = len(inCandidates)
@@ -67,6 +67,13 @@ def argMedian(A):
     mid = float(s[Ngrades-1])/2
     return np.argwhere(mid < s)[0][0]
 
+def computeGauge(A):
+    Ngrades = len(A)
+    acc = np.cumsum(A)
+    sort = np.argsort(acc)
+    median = sort(Ngrades/2+1)
+    return max(np.cumsum(A[median,:]), np.cumsum(A[:,median+1]))
+
 
 def rankError(rk_priori, rk_post, N):
     rk  = np.concatenate((rk_priori[:N], rk_post[:N]))
@@ -84,9 +91,12 @@ def findMinNvoters(Ncandidates, maxError = 0.1, Ntests = 100, Nwinners = 10, Nsu
     maxNvoters = 100000
 
     # perfect election
-    pr_priori = probaCandidates(Ncandidates, Ngrades, real_results)
-    res_priori = np.trunc(pr_priori*1000)
-    rk_priori = majorityJudgment(res_priori)
+    pr_priori = np.zeros((Ntests, Ncandidates, Ngrades))
+    rk_priori = np.zeros((Ntests, Ncandidates))
+    for i in Ntests:
+        pr_priori[i, :, :] = probaCandidates(Ncandidates, Ngrades, real_results)
+        res_priori = np.trunc(pr_priori*1000)
+        rk_priori[i, :] = majorityJudgment(res_priori)
 
     # election with random sets
     raw = np.zeros((Ntests, Ncandidates,Ngrades))
@@ -104,15 +114,52 @@ def findMinNvoters(Ncandidates, maxError = 0.1, Ntests = 100, Nwinners = 10, Nsu
 #             sys.stdout.write("\rTest: %i/%i (%i %%)" % (t+1, Ntests, float(t)/float(Ntests)*100.0))
             for i in range(Nvoters_old, Nvoters+1):
                 lot     = subset(Ncandidates, Nsubset, occurrence[t], alpha)
-                votes   = vote(lot, pr_priori[lot,:], Nsubset, Ngrades)
+                votes   = vote(lot, pr_priori[t, lot,:], Nsubset, Ngrades)
                 raw[t,lot,votes] += 1
             results = normalize(raw[t])
             rk      = majorityJudgment(raw[t])
-            err_samples[t,:] = [np.array(rankError(rk_priori, rk, Nwinner),dtype=float) for Nwinner in range(1,Nwinners+1)]
+            err_samples[t,:] = [np.array(rankError(rk_priori[t, :], rk, Nwinner),dtype=float) for Nwinner in range(1,Nwinners+1)]
         errors = np.mean(err_samples, axis=0)
         minNvoters[(errors < maxError) & (minNvoters == 0)] = Nvoters# if error_test[i] and minNvoters == 0 else 0]
         Nvoters_old = Nvoters
     return minNvoters
+
+def simulate(Ncandidates, Nwinners = 1, Nsubset = 5, Ngrades = 5, q = 100, alpha = 10, real_results = "terranova.txt", maxError = 0.1):
+    maxNvoters = 100000
+    minNvoters = np.zeros(Nwinners)
+    Nvoters = 0
+    Nvoters_old = 0
+
+    # perfect election
+    pr_priori = probaCandidates(Ncandidates, Ngrades, real_results)
+    res_priori = np.trunc(pr_priori*1000)
+    rk_priori = majorityJudgment(res_priori)
+
+    # election with random sets
+    raw = np.zeros((Ncandidates,Ngrades))
+    occurrence = np.zeros(Ncandidates)
+    while np.any(minNvoters == 0):
+        Nvoters += q
+        if Nvoters >= maxNvoters:
+            minNvoters[(minNvoters == 0)] = maxNvoters
+            return minNvoters
+
+        sys.stdout.write("\r%i voters is too low. Try with %i voters. " % (Nvoters_old, Nvoters))
+        sys.stdout.flush()
+        err_samples = np.zeros(Nwinners, dtype=int)
+#             sys.stdout.write("\rTest: %i/%i (%i %%)" % (t+1, Ntests, float(t)/float(Ntests)*100.0))
+        for i in range(Nvoters_old, Nvoters+1):
+            lot     = subset(Ncandidates, Nsubset, occurrence, alpha)
+            votes   = vote(lot, pr_priori[lot,:], Nsubset, Ngrades)
+            raw[lot,votes] += 1
+        results = normalize(raw)
+        rk      = majorityJudgment(raw)
+        err_samples = [np.array(rankError(rk_priori, rk, Nwinner),dtype=float) for Nwinner in range(1,Nwinners+1)]
+        errors = np.mean(err_samples, axis=0)
+        minNvoters[(errors < maxError) & (minNvoters == 0)] = Nvoters# if error_test[i] and minNvoters == 0 else 0]
+        Nvoters_old = Nvoters
+    return minNvoters
+
 
 
 def findMinAlpha(Ncandidates, Nvoters, Ntests = 100, Nsubset = 5, q = 1, alphaMin = 1, epsilon1=0.1, epsilon2=0.1):
