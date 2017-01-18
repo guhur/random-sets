@@ -27,17 +27,17 @@ if __name__ == '__main__':
     except OSError:
         pass
 
-    candidates = sys.argv[0]
-    Ntests = [sys.argv[1] if len(sys.argv) == 2 else 1000]
+    Ncandidates = int(sys.argv[1])
+    Ntests = [sys.argv[1] if len(sys.argv) == 3 else 1000]
     Nwinners = 1
-    minNvoters = np.zeros((len(candidates), Nwinners))
     args = []
-    for i in range(len(candidates)):
-        arg = [candidates[i],200,1]
+    print Ncandidates
+    for i in range(Ncandidates):
+        arg = [Ncandidates,100,1]
         args.append(arg)
     if args == []:
         print "Rien a faire!"
-    pool       = multiprocessing.Pool(processes=20)
+    pool       = multiprocessing.Pool(processes=1)
     pool.map(worker, args)
 
     print "Alors, ca marche ? :)"
